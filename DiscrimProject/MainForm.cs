@@ -18,10 +18,8 @@ namespace DiscrimProject
     public partial class MainForm : Form
     {
         SpeechSynthesizer synth;
-        SpeechRecognitionEngine _recognizer;
-        PromptBuilder consignes, falseRecog;
 
-        static private Host tobii4C = new Host();
+        static public Host tobii4C = new Host();
 
         public MainForm()
         {
@@ -66,6 +64,17 @@ namespace DiscrimProject
 
         //Launch one expe check
         private void launchExpeButton_Click(object sender, EventArgs e)
+        {
+            TrialForm trials = new TrialForm();
+            trials.Show();
+        }
+
+        private void MainForm_FormClosing(object sender, FormClosingEventArgs e)
+        {
+            tobii4C.Dispose();
+        }
+
+        private void MainForm_Shown(object sender, EventArgs e)
         {
 
         }

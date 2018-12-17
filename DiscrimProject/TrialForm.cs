@@ -106,7 +106,7 @@ namespace DiscrimProject
                 StopTrials();
             else if (e.KeyChar == (char)Keys.Space && trialState == 0)
             {
-                if (gazeCentered())
+                if (true) //if (gazeCentered())
                 {
                     trialState = 1;
                     this.Refresh();
@@ -153,6 +153,44 @@ namespace DiscrimProject
             {
                 //Draw vertical line
                 graphicsObj.DrawLine(myPen, this.Width /2, 50, this.Width / 2, this.Height-50);
+                //Draw polygon 1
+                PointF point1 = new PointF(150.0F+350, 250.0F);
+                PointF point2 = new PointF(200.0F+350, 225.0F);
+                PointF point3 = new PointF(300.0F+350, 205.0F);
+                PointF point4 = new PointF(350.0F+350, 250.0F);
+                PointF point5 = new PointF(400.0F+350, 300.0F);
+                PointF point6 = new PointF(450.0F+350, 400.0F);
+                PointF point7 = new PointF(350.0F+350, 450.0F);
+                PointF[] curvePoints =
+                {
+                     point1,
+                     point2,
+                     point3,
+                     point4,
+                     point5,
+                     point6,
+                     point7
+                };
+                graphicsObj.DrawPolygon(myPen, curvePoints);
+                //Draw polygon 2
+                point1 = new PointF(150.0F+ this.Width / 2, 250.0F);
+                point2 = new PointF(200.0F+ this.Width / 2, 225.0F);
+                point3 = new PointF(300.0F+ this.Width / 2, 205.0F);
+                point4 = new PointF(350.0F+ this.Width / 2, 250.0F);
+                point5 = new PointF(400.0F+ this.Width / 2, 300.0F);
+                point6 = new PointF(450.0F+ this.Width / 2, 400.0F);
+                point7 = new PointF(350.0F+ this.Width / 2, 450.0F);
+                PointF[] curvePoints2 =
+                {
+                     point1,
+                     point2,
+                     point3,
+                     point4,
+                     point5,
+                     point6,
+                     point7
+                };
+                graphicsObj.DrawPolygon(myPen, curvePoints2);
             }
 
             //Draw gaze

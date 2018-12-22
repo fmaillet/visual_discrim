@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data;
+using System.Diagnostics;
 using System.Drawing;
 using System.Linq;
 using System.Speech.Recognition;
@@ -12,13 +13,24 @@ using System.Threading.Tasks;
 using System.Windows.Forms;
 using Tobii.Interaction;
 
+struct Trials
+{
+    public Boolean equals;
+    public List<PointF> polygon1, polygon2;
+    public Boolean answer;
+    public long elapsed_time;
+};
+
 namespace DiscrimProject
 {
     public partial class TrialForm : Form
     {
         //Thread pour les essais
-        Thread gazeThread;
+        Thread gazeThread, trialsThread;
         int trialState = 0;
+
+        Trials currentTrial;
+        Stopwatch stopwatch = new Stopwatch();
 
         SpeechRecognitionEngine _recognizer;
         FixationDataStream fixationDataStream;
@@ -44,19 +56,21 @@ namespace DiscrimProject
             //Grammaire
             Choices reponses = new Choices();
             reponses.Add(new string[] { "oui", "non" });
-            GrammarBuilder gb = new GrammarBuilder();
-            gb.Append(reponses);
+            GrammarBuilder gb = new GrammarBuilder(reponses, 1, 1);
+            //gb.Append(reponses);
             Grammar g = new Grammar(gb);
             //Recog
             _recognizer = new SpeechRecognitionEngine();
+            _recognizer.RequestRecognizerUpdate();
             _recognizer.LoadGrammar(g);
             //Event handler
             _recognizer.SpeechRecognized += _recognizer_SpeechRecognized;
+            _recognizer.SpeechRecognitionRejected += _recognizer_SpeechNotRecognized;
             //Default input
             _recognizer.SetInputToDefaultAudioDevice();
             //asynchronous
             //_recognizer.RecognizeAsync(RecognizeMode.Multiple);
-            //_recognizer.RecognizeAsync(RecognizeMode.Multiple);
+            //_recognizer.RecognizeAsync(RecognizeMode.Single);
 
             //Init synthe
             synth = new SpeechSynthesizer();
@@ -65,13 +79,24 @@ namespace DiscrimProject
             fixCenterMsg.StartSentence();
             fixCenterMsg.AppendText("Fixez bien la croix au centre de l'écran.");
             fixCenterMsg.EndSentence();
+            falseRecog = new PromptBuilder();
+            falseRecog.StartSentence();
+            falseRecog.AppendText("Je n'ai pas compris.");
+            falseRecog.EndSentence();
+        }
+
+        private void _recognizer_SpeechNotRecognized(object sender, SpeechRecognitionRejectedEventArgs e)
+        {
+            
+            synth.SpeakAsync(fixCenterMsg);
+            //_recognizer.Recognize();
         }
 
         void GazeRefreshThread ()
         {
             while (Thread.CurrentThread.IsAlive)
-                {
-                    Invoke(new Action(() =>
+            {
+                Invoke(new Action(() =>
                 {
                     this.Refresh();
                 }));
@@ -81,26 +106,47 @@ namespace DiscrimProject
 
         void _recognizer_SpeechRecognized(object sender, SpeechRecognizedEventArgs e)
         {
-            if (e.Result.Confidence >= 0.7 && trialState == 1)
+            //Console.WriteLine(e.Result.Text + " " + e.Result.Confidence);
+            if (e.Result.Confidence >= 0.7)
             {
-                if (e.Result.Text == "non")
-                {
-                    
-                }
-                else
-                {
-                    
-                }
+                stopwatch.Stop();
+                currentTrial.elapsed_time = stopwatch.ElapsedMilliseconds;
+                currentTrial.answer = (e.Result.Text == "Oui");
                 trialState = 0;
-                this.Refresh();
+                Invoke(new Action(() =>
+                {
+                    this.Refresh();
+                }));
             }
-            /*else
-                synth.SpeakAsync(falseRecog);*/
+            else
+            {
+                synth.SpeakAsync(falseRecog);
+                //_recognizer.Recognize();
+            }
         }
 
+        
         private void TrialForm_Load(object sender, EventArgs e)
         {
 
+        }
+
+        private void TrialsRunningThread ()
+        {
+            while (Thread.CurrentThread.IsAlive)
+            {
+                currentTrial = new Trials();
+                GeneratePolygon();
+                trialState = 1;
+                Invoke(new Action(() =>
+                {
+                    this.Refresh();
+                }));
+                stopwatch.Start();
+                while (trialState == 1)
+                    _recognizer.Recognize();
+                Thread.Sleep(1000);
+            }
         }
 
         private void TrialForm_KeyPress(object sender, KeyPressEventArgs e)
@@ -111,17 +157,16 @@ namespace DiscrimProject
             {
                 if (true) //if (gazeCentered())
                 {
-                    generatePolygon();
-                    trialState = 1;
-                    this.Refresh();
-                    _recognizer.Recognize();
+                    trialsThread = new Thread(new ThreadStart(TrialsRunningThread));
+                    trialsThread.IsBackground = true;
+                    trialsThread.Start();
                 }
                 else
                     synth.SpeakAsync(fixCenterMsg);
             }
         }
 
-        private Boolean gazeCentered ()
+        private Boolean GazeCentered ()
         {
             if (eyeX > this.Width / 2 - 20 && eyeX < this.Width / 2 + 20)
                 if (eyeY > this.Height / 2 - 20 && eyeY < this.Height / 2 + 20)
@@ -131,15 +176,16 @@ namespace DiscrimProject
 
         private void StopTrials()
         {
-            
+            trialsThread.Abort();
+            trialState = 0;
             if (gazeThread != null) gazeThread.Abort();
-            //if (_recognizer != null) _recognizer.Dispose();
+            if (_recognizer != null) _recognizer.Dispose();
             Cursor.Show();
             //host.Dispose();
             this.Close();
         }
 
-        private void generatePolygon()
+        private void GeneratePolygon()
         {
             Random rnd = new Random();
             double alpha = 2 * Math.PI / 5;
@@ -168,7 +214,11 @@ namespace DiscrimProject
                     polygon2.Add(PointF.Add(p, new System.Drawing.Size((int)center2.X, (int)center2.Y)));
                 }
             }
-            
+
+            //Save the trial
+            currentTrial.equals = polyEquals;
+            currentTrial.polygon1 = polygon1;
+            currentTrial.polygon2 = polygon2;
         }
 
         private void TrialForm_Paint(object sender, PaintEventArgs e)
@@ -200,14 +250,14 @@ namespace DiscrimProject
             //Draw gaze
             if (MainForm.showGaze)
             {
-                if (gazeCentered()) myPen.Color = System.Drawing.Color.Red;
+                if (GazeCentered()) myPen.Color = System.Drawing.Color.Red;
                 else myPen.Color = System.Drawing.Color.Gray;
                 myPen.Width = 1;
                 g.DrawEllipse(myPen, (int)eyeX - 50, (int)eyeY - 50, 100, 100);
             }
         }
 
-        private void drawCross (System.Drawing.Graphics graphicsObj, Pen myPen, PointF center)
+        private void DrawCross (System.Drawing.Graphics graphicsObj, Pen myPen, PointF center)
         {
             graphicsObj.DrawLine(myPen, center.X - 10, center.Y, center.X + 10, center.Y);
             graphicsObj.DrawLine(myPen, center.X, center.Y - 10, center.X, center.Y + 10);

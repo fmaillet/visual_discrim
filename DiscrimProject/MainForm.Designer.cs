@@ -30,6 +30,7 @@
         {
             this.calibrationButton = new System.Windows.Forms.Button();
             this.launchExpeButton = new System.Windows.Forms.Button();
+            this.showEyesBox = new System.Windows.Forms.CheckBox();
             this.SuspendLayout();
             // 
             // calibrationButton
@@ -52,11 +53,23 @@
             this.launchExpeButton.UseVisualStyleBackColor = true;
             this.launchExpeButton.Click += new System.EventHandler(this.launchExpeButton_Click);
             // 
+            // showEyesBox
+            // 
+            this.showEyesBox.AutoSize = true;
+            this.showEyesBox.Location = new System.Drawing.Point(323, 150);
+            this.showEyesBox.Name = "showEyesBox";
+            this.showEyesBox.Size = new System.Drawing.Size(79, 17);
+            this.showEyesBox.TabIndex = 2;
+            this.showEyesBox.Text = "Show gaze";
+            this.showEyesBox.UseVisualStyleBackColor = true;
+            this.showEyesBox.CheckedChanged += new System.EventHandler(this.checkBox1_CheckedChanged);
+            // 
             // MainForm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(800, 450);
+            this.Controls.Add(this.showEyesBox);
             this.Controls.Add(this.launchExpeButton);
             this.Controls.Add(this.calibrationButton);
             this.Name = "MainForm";
@@ -64,6 +77,7 @@
             this.FormClosing += new System.Windows.Forms.FormClosingEventHandler(this.MainForm_FormClosing);
             this.Shown += new System.EventHandler(this.MainForm_Shown);
             this.ResumeLayout(false);
+            this.PerformLayout();
 
         }
 
@@ -71,6 +85,7 @@
 
         private System.Windows.Forms.Button calibrationButton;
         private System.Windows.Forms.Button launchExpeButton;
+        private System.Windows.Forms.CheckBox showEyesBox;
     }
 }
 

@@ -29,6 +29,9 @@ namespace DiscrimProject
         PromptBuilder fixCenterMsg, falseRecog;
         SpeechSynthesizer synth;
 
+        List<PointF> polygon1, polygon2;
+        Boolean polyEquals;
+
         public TrialForm()
         {
             InitializeComponent();
@@ -53,7 +56,7 @@ namespace DiscrimProject
             _recognizer.SetInputToDefaultAudioDevice();
             //asynchronous
             //_recognizer.RecognizeAsync(RecognizeMode.Multiple);
-            _recognizer.RecognizeAsync(RecognizeMode.Multiple);
+            //_recognizer.RecognizeAsync(RecognizeMode.Multiple);
 
             //Init synthe
             synth = new SpeechSynthesizer();
@@ -108,8 +111,10 @@ namespace DiscrimProject
             {
                 if (true) //if (gazeCentered())
                 {
+                    generatePolygon();
                     trialState = 1;
                     this.Refresh();
+                    _recognizer.Recognize();
                 }
                 else
                     synth.SpeakAsync(fixCenterMsg);
@@ -127,11 +132,43 @@ namespace DiscrimProject
         private void StopTrials()
         {
             
-            gazeThread.Abort();
+            if (gazeThread != null) gazeThread.Abort();
             //if (_recognizer != null) _recognizer.Dispose();
             Cursor.Show();
             //host.Dispose();
             this.Close();
+        }
+
+        private void generatePolygon()
+        {
+            Random rnd = new Random();
+            double alpha = 2 * Math.PI / 5;
+            polygon1 = new List<PointF>();
+            polygon2 = new List<PointF>();
+
+            polyEquals = Convert.ToBoolean(rnd.Next() % 2);
+
+            PointF center1 = new PointF(2*this.Width / 6, this.Height / 2);
+            PointF center2 = new PointF(4*this.Width / 6, this.Height / 2);
+            //POLYGON LEFT
+            for (int i = 0; i < 5; i++)
+            {
+                double r = rnd.Next(this.Width / 6-100, this.Width / 6-20);
+                PointF p = new PointF((float)(r * Math.Cos(alpha * i)), (float)(r * Math.Sin(alpha * i)));
+                polygon1.Add(PointF.Add(p, new System.Drawing.Size((int)center1.X, (int)center1.Y)));
+                if (polyEquals) polygon2.Add(PointF.Add(p, new System.Drawing.Size((int)center2.X, (int)center2.Y)));
+            }
+            //POLYGON RIGHT
+            if (!polyEquals)
+            {
+                for (int i = 0; i < 5; i++)
+                {
+                    double r = rnd.Next(this.Width / 6 - 100, this.Width / 6 - 20);
+                    PointF p = new PointF((float)(r * Math.Cos(alpha * i)), (float)(r * Math.Sin(alpha * i)));
+                    polygon2.Add(PointF.Add(p, new System.Drawing.Size((int)center2.X, (int)center2.Y)));
+                }
+            }
+            
         }
 
         private void TrialForm_Paint(object sender, PaintEventArgs e)
@@ -139,7 +176,8 @@ namespace DiscrimProject
             Graphics g = e.Graphics;
             System.Drawing.Graphics graphicsObj;
             graphicsObj = this.CreateGraphics();
-            //Pen
+            //Pens
+            Pen myPen2 = new Pen(System.Drawing.Color.Gray, 2);
             Pen myPen = new Pen(System.Drawing.Color.Black, 2);
 
             if (trialState == 0)
@@ -152,53 +190,27 @@ namespace DiscrimProject
             else if (trialState == 1)
             {
                 //Draw vertical line
-                graphicsObj.DrawLine(myPen, this.Width /2, 50, this.Width / 2, this.Height-50);
+                //graphicsObj.DrawLine(myPen2, this.Width /2, 50, this.Width / 2, this.Height-50);
                 //Draw polygon 1
-                PointF point1 = new PointF(150.0F+350, 250.0F);
-                PointF point2 = new PointF(200.0F+350, 225.0F);
-                PointF point3 = new PointF(300.0F+350, 205.0F);
-                PointF point4 = new PointF(350.0F+350, 250.0F);
-                PointF point5 = new PointF(400.0F+350, 300.0F);
-                PointF point6 = new PointF(450.0F+350, 400.0F);
-                PointF point7 = new PointF(350.0F+350, 450.0F);
-                PointF[] curvePoints =
-                {
-                     point1,
-                     point2,
-                     point3,
-                     point4,
-                     point5,
-                     point6,
-                     point7
-                };
-                graphicsObj.DrawPolygon(myPen, curvePoints);
+                graphicsObj.DrawPolygon(myPen, polygon1.ToArray());
                 //Draw polygon 2
-                point1 = new PointF(150.0F+ this.Width / 2, 250.0F);
-                point2 = new PointF(200.0F+ this.Width / 2, 225.0F);
-                point3 = new PointF(300.0F+ this.Width / 2, 205.0F);
-                point4 = new PointF(350.0F+ this.Width / 2, 250.0F);
-                point5 = new PointF(400.0F+ this.Width / 2, 300.0F);
-                point6 = new PointF(450.0F+ this.Width / 2, 400.0F);
-                point7 = new PointF(350.0F+ this.Width / 2, 450.0F);
-                PointF[] curvePoints2 =
-                {
-                     point1,
-                     point2,
-                     point3,
-                     point4,
-                     point5,
-                     point6,
-                     point7
-                };
-                graphicsObj.DrawPolygon(myPen, curvePoints2);
+                graphicsObj.DrawPolygon(myPen, polygon2.ToArray());
             }
 
             //Draw gaze
-            if (gazeCentered()) myPen.Color = System.Drawing.Color.Red;
-            else myPen.Color = System.Drawing.Color.Gray;
-            myPen.Width = 1;
-            g.DrawEllipse(myPen, (int)eyeX - 50, (int)eyeY - 50, 100, 100);
+            if (MainForm.showGaze)
+            {
+                if (gazeCentered()) myPen.Color = System.Drawing.Color.Red;
+                else myPen.Color = System.Drawing.Color.Gray;
+                myPen.Width = 1;
+                g.DrawEllipse(myPen, (int)eyeX - 50, (int)eyeY - 50, 100, 100);
+            }
+        }
 
+        private void drawCross (System.Drawing.Graphics graphicsObj, Pen myPen, PointF center)
+        {
+            graphicsObj.DrawLine(myPen, center.X - 10, center.Y, center.X + 10, center.Y);
+            graphicsObj.DrawLine(myPen, center.X, center.Y - 10, center.X, center.Y + 10);
         }
 
         private void TrialForm_Shown(object sender, EventArgs e)
@@ -209,9 +221,12 @@ namespace DiscrimProject
             fixationDataStream.Begin((x, y, timestamp) => { eyeX = x; eyeY = y; });*/
             pointDataStream.GazePoint((x, y, ts) => { eyeX = x; eyeY = y; });
             //Refresh gaze drawing
-            gazeThread = new Thread(new ThreadStart(GazeRefreshThread));
-            gazeThread.IsBackground = true;
-            gazeThread.Start();
+            if (MainForm.showGaze)
+            {
+                gazeThread = new Thread(new ThreadStart(GazeRefreshThread));
+                gazeThread.IsBackground = true;
+                gazeThread.Start();
+            }
         }
     }
 }

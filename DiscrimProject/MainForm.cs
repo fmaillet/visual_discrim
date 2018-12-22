@@ -21,6 +21,8 @@ namespace DiscrimProject
 
         static public Host tobii4C = new Host();
 
+        static public Boolean showGaze = false;
+
         public MainForm()
         {
             InitializeComponent();
@@ -87,6 +89,11 @@ namespace DiscrimProject
                 calibrationButton.Enabled = b;
             }));
 
+        }
+
+        private void checkBox1_CheckedChanged(object sender, EventArgs e)
+        {
+            showGaze = showEyesBox.Checked;
         }
     }
 

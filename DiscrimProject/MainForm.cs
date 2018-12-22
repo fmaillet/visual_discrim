@@ -13,6 +13,14 @@ using System.Windows.Forms;
 using Tobii.Interaction;
 using Tobii.Interaction.Framework;
 
+public struct Trials
+{
+    public Boolean equals;
+    public List<PointF> polygon1, polygon2;
+    public Boolean answer;
+    public long elapsed_time;
+};
+
 namespace DiscrimProject
 {
     public partial class MainForm : Form
@@ -22,6 +30,8 @@ namespace DiscrimProject
         static public Host tobii4C = new Host();
 
         static public Boolean showGaze = false;
+
+        static public List<Trials> allTrials;
 
         public MainForm()
         {
@@ -67,6 +77,8 @@ namespace DiscrimProject
         //Launch one expe check
         private void launchExpeButton_Click(object sender, EventArgs e)
         {
+            allTrials = new List<Trials>();
+
             TrialForm trials = new TrialForm();
             trials.Show();
         }
@@ -94,6 +106,24 @@ namespace DiscrimProject
         private void checkBox1_CheckedChanged(object sender, EventArgs e)
         {
             showGaze = showEyesBox.Checked;
+        }
+
+        private void MainForm_Paint(object sender, PaintEventArgs e)
+        {
+            if (allTrials == null) return;
+            if (allTrials.Count == 0) return;
+            nbTrials.Text = allTrials.Count + " essais réalisés";
+            //On parcours la liste
+            int good = 0;
+            long meanTime = 0;
+            foreach (Trials trial in allTrials)
+            {
+                if (trial.equals == trial.answer) good = good + 1;
+                meanTime = meanTime + trial.elapsed_time;
+            }
+            //Score
+            score.Text = "Score : " + good + " / " + allTrials.Count;
+            meanTimeLabel.Text = "Overall mean TR : " + meanTime / allTrials.Count + " ms";
         }
     }
 

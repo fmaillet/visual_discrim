@@ -13,14 +13,6 @@ using System.Threading.Tasks;
 using System.Windows.Forms;
 using Tobii.Interaction;
 
-struct Trials
-{
-    public Boolean equals;
-    public List<PointF> polygon1, polygon2;
-    public Boolean answer;
-    public long elapsed_time;
-};
-
 namespace DiscrimProject
 {
     public partial class TrialForm : Form
@@ -87,7 +79,7 @@ namespace DiscrimProject
 
         private void _recognizer_SpeechNotRecognized(object sender, SpeechRecognitionRejectedEventArgs e)
         {
-            
+            stopwatch.Stop();
             synth.SpeakAsync(fixCenterMsg);
             //_recognizer.Recognize();
         }
@@ -109,9 +101,13 @@ namespace DiscrimProject
             //Console.WriteLine(e.Result.Text + " " + e.Result.Confidence);
             if (e.Result.Confidence >= 0.7)
             {
-                stopwatch.Stop();
+                // Get trial time and answer
+                if (stopwatch.IsRunning) stopwatch.Stop();
                 currentTrial.elapsed_time = stopwatch.ElapsedMilliseconds;
                 currentTrial.answer = (e.Result.Text == "Oui");
+                //Save trial in trials list
+                MainForm.allTrials.Add(currentTrial);
+                //initiate new trial
                 trialState = 0;
                 Invoke(new Action(() =>
                 {
@@ -120,6 +116,7 @@ namespace DiscrimProject
             }
             else
             {
+                stopwatch.Stop();
                 synth.SpeakAsync(falseRecog);
                 //_recognizer.Recognize();
             }
@@ -138,14 +135,14 @@ namespace DiscrimProject
                 currentTrial = new Trials();
                 GeneratePolygon();
                 trialState = 1;
+                Thread.Sleep(1000);
                 Invoke(new Action(() =>
                 {
                     this.Refresh();
                 }));
-                stopwatch.Start();
+                stopwatch.Restart();
                 while (trialState == 1)
                     _recognizer.Recognize();
-                Thread.Sleep(1000);
             }
         }
 

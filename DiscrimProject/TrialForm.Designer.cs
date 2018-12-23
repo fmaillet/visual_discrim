@@ -37,7 +37,6 @@
             this.ClientSize = new System.Drawing.Size(800, 450);
             this.Name = "TrialForm";
             this.Text = "ExpeForm";
-            this.Load += new System.EventHandler(this.TrialForm_Load);
             this.Shown += new System.EventHandler(this.TrialForm_Shown);
             this.Paint += new System.Windows.Forms.PaintEventHandler(this.TrialForm_Paint);
             this.KeyPress += new System.Windows.Forms.KeyPressEventHandler(this.TrialForm_KeyPress);

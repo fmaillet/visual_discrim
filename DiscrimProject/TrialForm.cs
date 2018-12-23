@@ -35,7 +35,9 @@ namespace DiscrimProject
 
         List<PointF> polygon1, polygon2;
         Boolean polyEquals;
+        Random rnd = new Random(1234);
 
+        // Init form
         public TrialForm()
         {
             InitializeComponent();
@@ -77,13 +79,30 @@ namespace DiscrimProject
             falseRecog.EndSentence();
         }
 
-        private void _recognizer_SpeechNotRecognized(object sender, SpeechRecognitionRejectedEventArgs e)
+        // When form is shown, init gaze monitoring
+        private void TrialForm_Shown(object sender, EventArgs e)
         {
-            stopwatch.Stop();
-            synth.SpeakAsync(fixCenterMsg);
-            //_recognizer.Recognize();
+            //Init tobbi gaze
+            fixationDataStream = MainForm.tobii4C.Streams.CreateFixationDataStream();
+            fixationDataStream.Begin((x, y, timestamp) => { eyeX = x; eyeY = y; });
+            fixationDataStream.End((x, y, timestamp) => { eyeX = x; eyeY = y; });
+
+            //Refresh gaze drawing
+            if (MainForm.showGaze)
+            {
+                // Init tobii point gaze and get data's
+                pointDataStream = MainForm.tobii4C.Streams.CreateGazePointDataStream();
+                pointDataStream.GazePoint((x, y, ts) => { eyeX = x; eyeY = y; });
+                // Init gaze pointer refresh thread
+                gazeThread = new Thread(new ThreadStart(GazeRefreshThread))
+                {
+                    IsBackground = true
+                };
+                gazeThread.Start();
+            }
         }
 
+        // Show gaze pointer refresh thread
         void GazeRefreshThread ()
         {
             while (Thread.CurrentThread.IsAlive)
@@ -96,6 +115,15 @@ namespace DiscrimProject
             }
         }
 
+        // A word hasn't been recognized
+        private void _recognizer_SpeechNotRecognized(object sender, SpeechRecognitionRejectedEventArgs e)
+        {
+            stopwatch.Stop();
+            synth.SpeakAsync(fixCenterMsg);
+            //_recognizer.Recognize();
+        }
+
+        // A word has been recognized
         void _recognizer_SpeechRecognized(object sender, SpeechRecognizedEventArgs e)
         {
             //Console.WriteLine(e.Result.Text + " " + e.Result.Confidence);
@@ -122,12 +150,7 @@ namespace DiscrimProject
             }
         }
 
-        
-        private void TrialForm_Load(object sender, EventArgs e)
-        {
-
-        }
-
+        // Running trials thread, stops with ESC key
         private void TrialsRunningThread ()
         {
             while (Thread.CurrentThread.IsAlive)
@@ -146,6 +169,7 @@ namespace DiscrimProject
             }
         }
 
+        // KeyPress event
         private void TrialForm_KeyPress(object sender, KeyPressEventArgs e)
         {
             if (e.KeyChar == (char)Keys.Escape)
@@ -154,8 +178,10 @@ namespace DiscrimProject
             {
                 if (true) //if (gazeCentered())
                 {
-                    trialsThread = new Thread(new ThreadStart(TrialsRunningThread));
-                    trialsThread.IsBackground = true;
+                    trialsThread = new Thread(new ThreadStart(TrialsRunningThread))
+                    {
+                        IsBackground = true
+                    };
                     trialsThread.Start();
                 }
                 else
@@ -163,6 +189,7 @@ namespace DiscrimProject
             }
         }
 
+        // Check if gaze in centered (cross fixation)
         private Boolean GazeCentered ()
         {
             if (eyeX > this.Width / 2 - 20 && eyeX < this.Width / 2 + 20)
@@ -182,9 +209,9 @@ namespace DiscrimProject
             this.Close();
         }
 
+        // Generate (and record) new polygon's trials
         private void GeneratePolygon()
         {
-            Random rnd = new Random();
             double alpha = 2 * Math.PI / 5;
             polygon1 = new List<PointF>();
             polygon2 = new List<PointF>();
@@ -218,6 +245,7 @@ namespace DiscrimProject
             currentTrial.polygon2 = polygon2;
         }
 
+        // Form paint function
         private void TrialForm_Paint(object sender, PaintEventArgs e)
         {
             Graphics g = e.Graphics;
@@ -254,26 +282,13 @@ namespace DiscrimProject
             }
         }
 
+        // Just draw a fixation cross in the middle of the screen
         private void DrawCross (System.Drawing.Graphics graphicsObj, Pen myPen, PointF center)
         {
             graphicsObj.DrawLine(myPen, center.X - 10, center.Y, center.X + 10, center.Y);
             graphicsObj.DrawLine(myPen, center.X, center.Y - 10, center.X, center.Y + 10);
         }
 
-        private void TrialForm_Shown(object sender, EventArgs e)
-        {
-            //Init tobbi gaze
-            pointDataStream = MainForm.tobii4C.Streams.CreateGazePointDataStream();
-            /*fixationDataStream = MainForm.tobii4C.Streams.CreateFixationDataStream();
-            fixationDataStream.Begin((x, y, timestamp) => { eyeX = x; eyeY = y; });*/
-            pointDataStream.GazePoint((x, y, ts) => { eyeX = x; eyeY = y; });
-            //Refresh gaze drawing
-            if (MainForm.showGaze)
-            {
-                gazeThread = new Thread(new ThreadStart(GazeRefreshThread));
-                gazeThread.IsBackground = true;
-                gazeThread.Start();
-            }
-        }
+        
     }
 }

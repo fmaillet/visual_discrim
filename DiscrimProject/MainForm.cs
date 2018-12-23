@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data;
 using System.Drawing;
+using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Speech.Recognition;
@@ -55,7 +56,7 @@ namespace DiscrimProject
                     switch (userPresenceState.Value)
                     {
                         case UserPresence.Present:
-                            allowEyeTrack(true);
+                            AllowEyeTrack(true);
                             break;
 
                         default:
@@ -63,10 +64,12 @@ namespace DiscrimProject
                             break;
                     }
             });
+
+            Console.WriteLine(Directory.GetCurrentDirectory());
         }
 
         //Launch eye-tracker calibration
-        private void calibrationButton_Click(object sender, EventArgs e)
+        private void CalibrationButton_Click(object sender, EventArgs e)
         {
             // 3 points
             tobii4C.Context.LaunchConfigurationTool(ConfigurationTool.RetailCalibration, (data) => { });
@@ -75,7 +78,7 @@ namespace DiscrimProject
         }
 
         //Launch one expe check
-        private void launchExpeButton_Click(object sender, EventArgs e)
+        private void LaunchExpeButton_Click(object sender, EventArgs e)
         {
             allTrials = new List<Trials>();
 
@@ -94,7 +97,7 @@ namespace DiscrimProject
         }
 
         //Allow calibration button
-        private void allowEyeTrack(Boolean b)
+        private void AllowEyeTrack(Boolean b)
         {
             Invoke(new Action(() =>
             {
@@ -103,7 +106,7 @@ namespace DiscrimProject
 
         }
 
-        private void checkBox1_CheckedChanged(object sender, EventArgs e)
+        private void CheckBox1_CheckedChanged(object sender, EventArgs e)
         {
             showGaze = showEyesBox.Checked;
         }
@@ -116,14 +119,84 @@ namespace DiscrimProject
             //On parcours la liste
             int good = 0;
             long meanTime = 0;
+            long meanTimeG = 0;
+            long meanTimeB = 0;
             foreach (Trials trial in allTrials)
             {
-                if (trial.equals == trial.answer) good = good + 1;
+                if (trial.equals == trial.answer)
+                {
+                    good = good + 1;
+                    meanTimeG = meanTimeG + trial.elapsed_time;
+                }
+                else meanTimeB = meanTimeB + trial.elapsed_time;
                 meanTime = meanTime + trial.elapsed_time;
             }
             //Score
             score.Text = "Score : " + good + " / " + allTrials.Count;
-            meanTimeLabel.Text = "Overall mean TR : " + meanTime / allTrials.Count + " ms";
+            // Mean answers times
+            meanTimeLabel.Text = "" + meanTime / allTrials.Count ;
+            if (good != 0) meanSY_TimeLabel.Text = "" + meanTimeG / good ;
+        }
+
+        private void label1_Click(object sender, EventArgs e)
+        {
+
+        }
+
+        private void tableLayoutPanel1_Paint(object sender, PaintEventArgs e)
+        {
+
+        }
+
+        // Save datas to CSV file
+        // https://stackoverflow.com/questions/18757097/writing-data-into-csv-file-in-c-sharp
+        private void saveCSV_button_Click(object sender, EventArgs e)
+        {
+            // if nothing to save, return
+            if (allTrials == null) return;
+            if (allTrials.Count == 0) return;
+            // get subject ID
+            if (string.IsNullOrWhiteSpace(ID_textBox.Text)) return;
+            var id = ID_textBox.Text;
+            // construct the cvs
+            var csv = new StringBuilder();
+            csv.AppendLine("ID,congruent,response,delay");
+            // loop in trials
+            foreach (Trials trial in allTrials)
+            {
+                var first = trial.equals.ToString();
+                var second = trial.answer.ToString();
+                var third = trial.answer.ToString();
+                var newLine = string.Format("{0},{1},{2},{3}", id, first, second, third);
+                csv.AppendLine(newLine);
+            }
+            // get path
+            string folderPath = "";
+            FolderBrowserDialog folderBrowserDialog1 = new FolderBrowserDialog();
+            if (folderBrowserDialog1.ShowDialog() == DialogResult.OK)
+            {
+                folderPath = folderBrowserDialog1.SelectedPath;
+                File.WriteAllText(folderPath + "\\data.csv", csv.ToString());
+            }
+            else return;
+            Console.WriteLine(folderPath+"\\data.csv saved");
+        }
+
+        // Limit ID textbox input to numbers
+        // https://stackoverflow.com/questions/463299/how-do-i-make-a-textbox-that-only-accepts-numbers
+        private void ID_textBox_KeyPress(object sender, KeyPressEventArgs e)
+        {
+            if (!char.IsControl(e.KeyChar) && !char.IsDigit(e.KeyChar) &&
+        (e.KeyChar != '.'))
+            {
+                e.Handled = true;
+            }
+
+            // only allow one decimal point
+            if ((e.KeyChar == '.') && ((sender as TextBox).Text.IndexOf('.') > -1))
+            {
+                e.Handled = true;
+            }
         }
     }
 

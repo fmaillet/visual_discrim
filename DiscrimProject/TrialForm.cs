@@ -132,7 +132,7 @@ namespace DiscrimProject
                 // Get trial time and answer
                 if (stopwatch.IsRunning) stopwatch.Stop();
                 currentTrial.elapsed_time = stopwatch.ElapsedMilliseconds;
-                currentTrial.answer = (e.Result.Text == "Oui");
+                currentTrial.response = e.Result.Text.Equals("oui");
                 //Save trial in trials list
                 MainForm.allTrials.Add(currentTrial);
                 //initiate new trial
@@ -240,7 +240,7 @@ namespace DiscrimProject
             }
 
             //Save the trial
-            currentTrial.equals = polyEquals;
+            currentTrial.congruence = polyEquals;
             currentTrial.polygon1 = polygon1;
             currentTrial.polygon2 = polygon2;
         }

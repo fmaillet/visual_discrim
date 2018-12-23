@@ -16,9 +16,9 @@ using Tobii.Interaction.Framework;
 
 public struct Trials
 {
-    public Boolean equals;
+    public Boolean congruence;
     public List<PointF> polygon1, polygon2;
-    public Boolean answer;
+    public Boolean response;
     public long elapsed_time;
 };
 
@@ -91,11 +91,6 @@ namespace DiscrimProject
             tobii4C.Dispose();
         }
 
-        private void MainForm_Shown(object sender, EventArgs e)
-        {
-
-        }
-
         //Allow calibration button
         private void AllowEyeTrack(Boolean b)
         {
@@ -123,7 +118,7 @@ namespace DiscrimProject
             long meanTimeB = 0;
             foreach (Trials trial in allTrials)
             {
-                if (trial.equals == trial.answer)
+                if (trial.congruence == trial.response)
                 {
                     good = good + 1;
                     meanTimeG = meanTimeG + trial.elapsed_time;
@@ -160,13 +155,13 @@ namespace DiscrimProject
             var id = ID_textBox.Text;
             // construct the cvs
             var csv = new StringBuilder();
-            csv.AppendLine("ID,congruent,response,delay");
+            csv.AppendLine("ID,congruence,response,delay");
             // loop in trials
             foreach (Trials trial in allTrials)
             {
-                var first = trial.equals.ToString();
-                var second = trial.answer.ToString();
-                var third = trial.answer.ToString();
+                var first = trial.congruence.ToString();
+                var second = trial.response.ToString();
+                var third = trial.elapsed_time.ToString();
                 var newLine = string.Format("{0},{1},{2},{3}", id, first, second, third);
                 csv.AppendLine(newLine);
             }
@@ -197,6 +192,16 @@ namespace DiscrimProject
             {
                 e.Handled = true;
             }
+        }
+
+        private void BrowseTrials_button_Click(object sender, EventArgs e)
+        {
+            // if nothing to save, return
+            if (allTrials == null) return;
+            if (allTrials.Count == 0) return;
+            // open trials browser
+            BrowseTrialsForm trialsBrowser = new BrowseTrialsForm();
+            trialsBrowser.Show();
         }
     }
 

@@ -44,6 +44,7 @@
             this.saveCSV_button = new System.Windows.Forms.Button();
             this.ID_textBox = new System.Windows.Forms.TextBox();
             this.label6 = new System.Windows.Forms.Label();
+            this.browseTrials_button = new System.Windows.Forms.Button();
             this.tableLayoutPanel1.SuspendLayout();
             this.SuspendLayout();
             // 
@@ -221,11 +222,22 @@
             this.label6.TabIndex = 10;
             this.label6.Text = "Id :";
             // 
+            // browseTrials_button
+            // 
+            this.browseTrials_button.Location = new System.Drawing.Point(26, 229);
+            this.browseTrials_button.Name = "browseTrials_button";
+            this.browseTrials_button.Size = new System.Drawing.Size(133, 51);
+            this.browseTrials_button.TabIndex = 11;
+            this.browseTrials_button.Text = "Voir les essais";
+            this.browseTrials_button.UseVisualStyleBackColor = true;
+            this.browseTrials_button.Click += new System.EventHandler(this.BrowseTrials_button_Click);
+            // 
             // MainForm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(800, 450);
+            this.Controls.Add(this.browseTrials_button);
             this.Controls.Add(this.label6);
             this.Controls.Add(this.ID_textBox);
             this.Controls.Add(this.saveCSV_button);
@@ -239,7 +251,6 @@
             this.Name = "MainForm";
             this.Text = "Tobii Discrimination Project";
             this.FormClosing += new System.Windows.Forms.FormClosingEventHandler(this.MainForm_FormClosing);
-            this.Shown += new System.EventHandler(this.MainForm_Shown);
             this.Paint += new System.Windows.Forms.PaintEventHandler(this.MainForm_Paint);
             this.tableLayoutPanel1.ResumeLayout(false);
             this.tableLayoutPanel1.PerformLayout();
@@ -266,6 +277,7 @@
         private System.Windows.Forms.Button saveCSV_button;
         private System.Windows.Forms.TextBox ID_textBox;
         private System.Windows.Forms.Label label6;
+        private System.Windows.Forms.Button browseTrials_button;
     }
 }
 

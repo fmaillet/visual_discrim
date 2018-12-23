@@ -163,7 +163,6 @@
             this.label1.Size = new System.Drawing.Size(25, 13);
             this.label1.TabIndex = 0;
             this.label1.Text = "Yes";
-            this.label1.Click += new System.EventHandler(this.label1_Click);
             // 
             // label4
             // 
@@ -203,7 +202,7 @@
             this.saveCSV_button.TabIndex = 8;
             this.saveCSV_button.Text = "Sauvegarder datas";
             this.saveCSV_button.UseVisualStyleBackColor = true;
-            this.saveCSV_button.Click += new System.EventHandler(this.saveCSV_button_Click);
+            this.saveCSV_button.Click += new System.EventHandler(this.SaveCSV_button_Click);
             // 
             // ID_textBox
             // 

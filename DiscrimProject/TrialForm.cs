@@ -34,7 +34,9 @@ namespace DiscrimProject
         SpeechSynthesizer synth;
 
         List<PointF> polygon1, polygon2;
-        Boolean polyEquals;
+        List<Fixation> trialFixations;
+        Fixation currentFixation;
+        Boolean polygonsCongruence;
         Random rnd = new Random(1234);
 
         // Init form
@@ -82,10 +84,7 @@ namespace DiscrimProject
         // When form is shown, init gaze monitoring
         private void TrialForm_Shown(object sender, EventArgs e)
         {
-            //Init tobbi gaze
-            fixationDataStream = MainForm.tobii4C.Streams.CreateFixationDataStream();
-            fixationDataStream.Begin((x, y, timestamp) => { eyeX = x; eyeY = y; });
-            fixationDataStream.End((x, y, timestamp) => { eyeX = x; eyeY = y; });
+           
 
             //Refresh gaze drawing
             if (MainForm.showGaze)
@@ -133,6 +132,7 @@ namespace DiscrimProject
                 if (stopwatch.IsRunning) stopwatch.Stop();
                 currentTrial.elapsed_time = stopwatch.ElapsedMilliseconds;
                 currentTrial.response = e.Result.Text.Equals("oui");
+                currentTrial.fixations = trialFixations;
                 //Save trial in trials list
                 MainForm.allTrials.Add(currentTrial);
                 //initiate new trial
@@ -178,11 +178,29 @@ namespace DiscrimProject
             {
                 if (true) //if (gazeCentered())
                 {
+                    //Launch trials thread
                     trialsThread = new Thread(new ThreadStart(TrialsRunningThread))
                     {
                         IsBackground = true
                     };
                     trialsThread.Start();
+                    //Init tobbi gaze
+                    fixationDataStream = MainForm.tobii4C.Streams.CreateFixationDataStream();
+                    fixationDataStream.Begin((x, y, timestamp) =>
+                    {
+                        if (x != 0)
+                        { 
+                            currentFixation = new Fixation();
+                            currentFixation.x = x;
+                            currentFixation.y = y;
+                            currentFixation.timestamp = timestamp;
+                        }
+                    });
+                    fixationDataStream.End((x, y, timestamp) =>
+                    {
+                        currentFixation.timespan = timestamp;
+                        trialFixations.Add(currentFixation);
+                    });
                 }
                 else
                     synth.SpeakAsync(fixCenterMsg);
@@ -200,7 +218,7 @@ namespace DiscrimProject
 
         private void StopTrials()
         {
-            trialsThread.Abort();
+            if (trialsThread != null) trialsThread.Abort();
             trialState = 0;
             if (gazeThread != null) gazeThread.Abort();
             if (_recognizer != null) _recognizer.Dispose();
@@ -212,26 +230,30 @@ namespace DiscrimProject
         // Generate (and record) new polygon's trials
         private void GeneratePolygon()
         {
-            double alpha = 2 * Math.PI / 5;
+            // Init new polygons
             polygon1 = new List<PointF>();
             polygon2 = new List<PointF>();
-
-            polyEquals = Convert.ToBoolean(rnd.Next() % 2);
+            // random congruence 
+            polygonsCongruence = Convert.ToBoolean(rnd.Next() % 2);
 
             PointF center1 = new PointF(2*this.Width / 6, this.Height / 2);
             PointF center2 = new PointF(4*this.Width / 6, this.Height / 2);
+
+            //Vertices number
+            int vertices = rnd.Next(4, 7);
+            double alpha = 2 * Math.PI / vertices;
             //POLYGON LEFT
-            for (int i = 0; i < 5; i++)
+            for (int i = 0; i < vertices; i++)
             {
                 double r = rnd.Next(this.Width / 6-100, this.Width / 6-20);
                 PointF p = new PointF((float)(r * Math.Cos(alpha * i)), (float)(r * Math.Sin(alpha * i)));
                 polygon1.Add(PointF.Add(p, new System.Drawing.Size((int)center1.X, (int)center1.Y)));
-                if (polyEquals) polygon2.Add(PointF.Add(p, new System.Drawing.Size((int)center2.X, (int)center2.Y)));
+                if (polygonsCongruence) polygon2.Add(PointF.Add(p, new System.Drawing.Size((int)center2.X, (int)center2.Y)));
             }
             //POLYGON RIGHT
-            if (!polyEquals)
+            if (!polygonsCongruence)
             {
-                for (int i = 0; i < 5; i++)
+                for (int i = 0; i < vertices; i++)
                 {
                     double r = rnd.Next(this.Width / 6 - 100, this.Width / 6 - 20);
                     PointF p = new PointF((float)(r * Math.Cos(alpha * i)), (float)(r * Math.Sin(alpha * i)));
@@ -240,9 +262,12 @@ namespace DiscrimProject
             }
 
             //Save the trial
-            currentTrial.congruence = polyEquals;
+            currentTrial.vertices = vertices;
+            currentTrial.congruence = polygonsCongruence;
             currentTrial.polygon1 = polygon1;
             currentTrial.polygon2 = polygon2;
+            //Init fixations record
+            trialFixations = new List<Fixation>();
         }
 
         // Form paint function
@@ -273,12 +298,13 @@ namespace DiscrimProject
             }
 
             //Draw gaze
-            if (MainForm.showGaze)
+            if (MainForm.showGaze & MainForm.userIsPresent)
             {
                 if (GazeCentered()) myPen.Color = System.Drawing.Color.Red;
                 else myPen.Color = System.Drawing.Color.Gray;
                 myPen.Width = 1;
-                g.DrawEllipse(myPen, (int)eyeX - 50, (int)eyeY - 50, 100, 100);
+                if ((int)eyeX<this.Width & (int)eyeY<this.Height)
+                    g.DrawEllipse(myPen, (int)eyeX - 50, (int)eyeY - 50, 100, 100);
             }
         }
 

@@ -14,12 +14,20 @@ using System.Windows.Forms;
 using Tobii.Interaction;
 using Tobii.Interaction.Framework;
 
+public struct Fixation
+{
+    public double x, y;
+    public double timestamp, timespan;
+}
+
 public struct Trials
 {
+    public int vertices;
     public Boolean congruence;
     public List<PointF> polygon1, polygon2;
     public Boolean response;
     public long elapsed_time;
+    public List<Fixation> fixations;
 };
 
 namespace DiscrimProject
@@ -29,6 +37,7 @@ namespace DiscrimProject
         SpeechSynthesizer synth;
 
         static public Host tobii4C = new Host();
+        static public Boolean userIsPresent = false;
 
         static public Boolean showGaze = false;
 
@@ -56,10 +65,13 @@ namespace DiscrimProject
                     switch (userPresenceState.Value)
                     {
                         case UserPresence.Present:
+                            userIsPresent = true;
+                            Console.WriteLine("User is present");
                             AllowEyeTrack(true);
                             break;
 
                         default:
+                            userIsPresent = false;
                             Console.WriteLine("User is not present");
                             break;
                     }
@@ -133,11 +145,6 @@ namespace DiscrimProject
             if (good != 0) meanSY_TimeLabel.Text = "" + meanTimeG / good ;
         }
 
-        private void label1_Click(object sender, EventArgs e)
-        {
-
-        }
-
         private void tableLayoutPanel1_Paint(object sender, PaintEventArgs e)
         {
 
@@ -145,7 +152,7 @@ namespace DiscrimProject
 
         // Save datas to CSV file
         // https://stackoverflow.com/questions/18757097/writing-data-into-csv-file-in-c-sharp
-        private void saveCSV_button_Click(object sender, EventArgs e)
+        private void SaveCSV_button_Click(object sender, EventArgs e)
         {
             // if nothing to save, return
             if (allTrials == null) return;
@@ -194,6 +201,7 @@ namespace DiscrimProject
             }
         }
 
+        // Launch trials browser
         private void BrowseTrials_button_Click(object sender, EventArgs e)
         {
             // if nothing to save, return
@@ -204,7 +212,5 @@ namespace DiscrimProject
             trialsBrowser.Show();
         }
     }
-
-    
 }
 
